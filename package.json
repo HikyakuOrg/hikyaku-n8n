@@ -1,0 +1,54 @@
+{
+  "name": "n8n-nodes-hikyaku",
+  "version": "0.1.0",
+  "description": "n8n community node for Hikyaku — triggers when a package's delivery status changes",
+  "license": "MIT",
+  "homepage": "https://hikyaku.org/plugins/n8n",
+  "keywords": [
+    "n8n-community-node-package"
+  ],
+  "author": {
+    "name": "Hikyaku",
+    "email": "support@hikyaku.org"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/emansih/hikyaku-n8n.git"
+  },
+  "scripts": {
+    "build": "n8n-node build",
+    "build:watch": "tsc --watch",
+    "dev": "n8n-node dev",
+    "lint": "n8n-node lint",
+    "lint:fix": "n8n-node lint --fix",
+    "release": "n8n-node release",
+    "prepublishOnly": "n8n-node prerelease"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "n8n": {
+    "n8nNodesApiVersion": 1,
+    "strict": true,
+    "credentials": [
+      "dist/credentials/HikyakuOAuth2Api.credentials.js"
+    ],
+    "nodes": [
+      "dist/nodes/HikyakuDeliveryStatusTrigger/HikyakuDeliveryStatusTrigger.node.js",
+      "dist/nodes/HikyakuGetCustomer/HikyakuGetCustomer.node.js",
+      "dist/nodes/HikyakuGetPackage/HikyakuGetPackage.node.js"
+    ]
+  },
+  "devDependencies": {
+    "@n8n/node-cli": "^0.42.0",
+    "eslint": "^9.0.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.9.0"
+  },
+  "peerDependencies": {
+    "n8n-workflow": "*"
+  }
+}

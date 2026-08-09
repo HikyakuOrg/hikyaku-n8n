@@ -8,12 +8,12 @@
     "n8n-community-node-package"
   ],
   "author": {
-    "name": "Hikyaku",
+    "name": "Daniel Quah",
     "email": "support@hikyaku.org"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/emansih/hikyaku-n8n.git"
+    "url": "git+https://github.com/HikyakuOrg/hikyaku-n8n.git"
   },
   "scripts": {
     "build": "n8n-node build",

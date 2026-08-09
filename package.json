@@ -1,7 +1,7 @@
 {
   "name": "n8n-nodes-hikyaku",
-  "version": "0.1.0",
-  "description": "n8n community node for Hikyaku — triggers when a package's delivery status changes",
+  "version": "0.1.1",
+  "description": "n8n community node for Hikyaku",
   "license": "MIT",
   "homepage": "https://hikyaku.org/plugins/n8n",
   "keywords": [

@@ -24,6 +24,9 @@
     "release": "n8n-node release",
     "prepublishOnly": "n8n-node prerelease"
   },
+  "engines": {
+    "node": ">=22"
+  },
   "files": [
     "dist"
   ],
@@ -44,6 +47,7 @@
   },
   "devDependencies": {
     "@n8n/node-cli": "^0.42.0",
+    "@types/node": "^22.0.0",
     "eslint": "^9.0.0",
     "prettier": "^3.0.0",
     "typescript": "^5.9.0"

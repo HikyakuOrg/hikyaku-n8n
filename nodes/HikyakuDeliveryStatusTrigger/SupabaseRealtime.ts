@@ -47,6 +47,13 @@ export interface SupabaseRealtimeOptions {
 	schema: string;
 	table: string;
 	/**
+	 * A postgres_changes filter expression, PostgREST-style (e.g. `package_status=in.(1,2)`).
+	 * Evaluated server-side by Realtime against the new row's columns — matching rows never
+	 * leave the database, so an unmatched status change costs nothing on this connection.
+	 * Omit for no filter (every INSERT on `table` is delivered).
+	 */
+	filter?: string;
+	/**
 	 * Returns a valid access token for the `phx_join` / `access_token` frames. Called
 	 * before every (re)join and whenever a proactive refresh is requested. Whether the
 	 * token needed refreshing first is this function's concern, not the client's.
@@ -226,7 +233,12 @@ export class SupabaseRealtimeClient {
 				access_token: token,
 				config: {
 					postgres_changes: [
-						{ event: 'INSERT', schema: this.options.schema, table: this.options.table },
+						{
+							event: 'INSERT',
+							schema: this.options.schema,
+							table: this.options.table,
+							...(this.options.filter ? { filter: this.options.filter } : {}),
+						},
 					],
 				},
 			},

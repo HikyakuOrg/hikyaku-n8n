@@ -3,6 +3,8 @@ import type {
 	CronExpression,
 	IDataObject,
 	IHttpRequestOptions,
+	ILoadOptionsFunctions,
+	INodePropertyOptions,
 	INodeType,
 	INodeTypeDescription,
 	ITriggerFunctions,
@@ -18,7 +20,7 @@ interface HikyakuOAuth2Credentials {
 }
 
 async function hikyakuApiRequest(
-	this: ITriggerFunctions,
+	this: ITriggerFunctions | ILoadOptionsFunctions,
 	path: string,
 	qs: IDataObject,
 ): Promise<IDataObject[]> {
@@ -86,7 +88,33 @@ export class HikyakuDeliveryStatusTrigger implements INodeType {
 				required: true,
 			},
 		],
-		properties: [],
+		properties: [
+			{
+				displayName: 'Status Names or IDs',
+				name: 'statuses',
+				type: 'multiOptions',
+				typeOptions: {
+					loadOptionsMethod: 'getStatuses',
+				},
+				default: [],
+				description: 'Only trigger when the new status is one of these. Leave empty to trigger on every status change. Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+			},
+		],
+	};
+
+	methods = {
+		loadOptions: {
+			async getStatuses(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				const rows = await hikyakuApiRequest.call(this, 'package_status', {
+					select: 'id, enums',
+					order: 'id.asc',
+				});
+				return rows.map((row) => ({
+					name: String(row.enums),
+					value: row.id as number,
+				}));
+			},
+		},
 	};
 
 	async trigger(this: ITriggerFunctions): Promise<ITriggerResponse> {
@@ -99,6 +127,12 @@ export class HikyakuDeliveryStatusTrigger implements INodeType {
 		}
 
 		const credentials = await this.getCredentials<HikyakuOAuth2Credentials>('hikyakuOAuth2Api');
+
+		// package_timeline.package_status is the raw FK id per row (set by
+		// insert_package_timeline()) — the same column Realtime's server-side filter and the
+		// catchUp() replay query below both match against. Empty selection = no filter.
+		const statuses = this.getNodeParameter('statuses', []) as number[];
+		const statusFilterValue = statuses.length > 0 ? `in.(${statuses.join(',')})` : undefined;
 
 		// package_timeline is an append-only audit log (see insert_package_timeline()) — new
 		// rows are what "delivery status changed" means here; current_status on
@@ -145,6 +179,7 @@ export class HikyakuDeliveryStatusTrigger implements INodeType {
 			const missed = await hikyakuApiRequest.call(this, 'package_timeline', {
 				select: 'id, package_id',
 				id: `gt.${staticData.lastId}`,
+				...(statusFilterValue ? { package_status: statusFilterValue } : {}),
 				order: 'id.asc',
 				limit: '50',
 			});
@@ -158,6 +193,7 @@ export class HikyakuDeliveryStatusTrigger implements INodeType {
 			apikey: credentials.anonKey,
 			schema: 'public',
 			table: 'package_timeline',
+			filter: statusFilterValue ? `package_status=${statusFilterValue}` : undefined,
 			getAccessToken: () => getFreshAccessToken.call(this),
 			onInsert: (row) => {
 				void emitRow(row);

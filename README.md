@@ -46,7 +46,7 @@ In n8n, all a tenant does is:
    is the **Connect my account** button.
 2. Click **Connect my account** to complete the OAuth consent flow, logging into their own
    Hikyaku account. 
-   
+
 ## Requirements
 
 - **Node.js 22 or newer** on the n8n host. The trigger uses the `WebSocket` client built into
@@ -57,9 +57,18 @@ In n8n, all a tenant does is:
   per execution) — each activated workflow holds its own socket open. Supabase's free plan
   includes 200 concurrent realtime connections, Pro 500.
 
+## Filtering by status
+
+The **Statuses** field (multi-select, populated live from the `package_status` table) limits
+the trigger to specific status transitions — e.g. only `out_for_delivery` and `delivered`.
+Leave it empty to trigger on every status change (the default).
+
+The filter is applied server-side by Supabase Realtime itself
+([`postgres_changes` filters](https://supabase.com/blog/postgres-changes-filters-and-column-selection))
+
+
 ## Known limitations
 
-- Triggers on *any* status change — no per-status filtering yet.
 - If the connection drops (network blip, host restart, token issues), the node reconnects with
   backoff and replays anything it missed from its cursor once resubscribed — but a change that
   happens while every reconnect attempt is still failing (default: 5 attempts, capped at 30s

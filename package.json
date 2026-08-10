@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-hikyaku",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "n8n community node for Hikyaku",
   "license": "MIT",
   "homepage": "https://hikyaku.org/plugins/n8n",

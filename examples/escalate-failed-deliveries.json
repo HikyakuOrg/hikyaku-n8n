@@ -1,0 +1,198 @@
+{
+  "name": "Hikyaku - Escalate failed deliveries to dispatch",
+  "nodes": [
+    {
+      "id": "3f59bb24-d256-4866-b3fa-b54f16be8d05",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [220, 40],
+      "parameters": {
+        "width": 620,
+        "height": 240,
+        "content": "## Setup\n1. Open **Hikyaku Delivery Status Trigger** and connect your **Hikyaku OAuth2 API** credential.\n2. In **Statuses**, pick whatever your exception states are (e.g. **failed_delivery**, **returned**) — they load live from your instance.\n3. The **IF** node branches on `warehouse_id` being set as a placeholder — replace this with your own escalation rule (time of day, specific warehouse, etc.).\n4. Open **Alert Dispatch Team** and connect an SMTP credential.\n5. Activate the workflow."
+      }
+    },
+    {
+      "id": "151ae720-a484-436f-8434-cf78b818a128",
+      "name": "Hikyaku Delivery Status Trigger",
+      "type": "n8n-nodes-hikyaku.hikyakuDeliveryStatusTrigger",
+      "typeVersion": 1,
+      "position": [240, 400],
+      "parameters": {
+        "statuses": []
+      },
+      "notes": "Set Statuses to your exception states, e.g. failed_delivery, returned.",
+      "credentials": {
+        "hikyakuOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "Hikyaku OAuth2 API account"
+        }
+      }
+    },
+    {
+      "id": "2f2744f0-40c7-4e3f-b669-7559527f425b",
+      "name": "Hikyaku Get Customer (from)",
+      "type": "n8n-nodes-hikyaku.hikyakuGetCustomer",
+      "typeVersion": 1,
+      "position": [460, 400],
+      "parameters": {
+        "customerId": "={{$json[\"from_customer\"]}}",
+        "outputPrefix": "from_customer"
+      },
+      "credentials": {
+        "hikyakuOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "Hikyaku OAuth2 API account"
+        }
+      }
+    },
+    {
+      "id": "1efee868-3642-46a0-bcb8-ed093cfa6333",
+      "name": "Hikyaku Get Customer (to)",
+      "type": "n8n-nodes-hikyaku.hikyakuGetCustomer",
+      "typeVersion": 1,
+      "position": [680, 400],
+      "parameters": {
+        "customerId": "={{$json[\"to_customer\"]}}",
+        "outputPrefix": "to_customer"
+      },
+      "credentials": {
+        "hikyakuOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "Hikyaku OAuth2 API account"
+        }
+      }
+    },
+    {
+      "id": "56550a4c-0272-45ab-8549-ecb516d6e887",
+      "name": "Hikyaku Get Package",
+      "type": "n8n-nodes-hikyaku.hikyakuGetPackage",
+      "typeVersion": 1,
+      "position": [900, 400],
+      "parameters": {
+        "packageId": "={{$json[\"id\"]}}",
+        "outputPrefix": "package"
+      },
+      "credentials": {
+        "hikyakuOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "Hikyaku OAuth2 API account"
+        }
+      }
+    },
+    {
+      "id": "6c388190-6dba-463c-9205-dd9f09d3be9b",
+      "name": "IF",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1120, 400],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "escalation-condition-1",
+              "leftValue": "={{$json[\"warehouse_id\"]}}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "164585f4-15ed-4cfe-af7d-f6270f9ae1e9",
+      "name": "Alert Dispatch Team",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [1340, 400],
+      "parameters": {
+        "fromEmail": "alerts@yourcompany.com",
+        "toEmail": "dispatch@yourcompany.com",
+        "subject": "=Delivery exception: {{$json[\"package_tracking_number\"]}}",
+        "text": "=Package {{$json[\"package_tracking_number\"]}} is now {{$json[\"package_status\"]}}.\n\nFrom: {{$json[\"from_customer_name\"]}} ({{$json[\"from_customer_phone_number\"]}})\nTo: {{$json[\"to_customer_name\"]}} ({{$json[\"to_customer_phone_number\"]}})\nWarehouse: {{$json[\"warehouse_id\"]}}",
+        "options": {}
+      },
+      "credentials": {
+        "smtp": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "SMTP account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Hikyaku Delivery Status Trigger": {
+      "main": [
+        [
+          {
+            "node": "Hikyaku Get Customer (from)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hikyaku Get Customer (from)": {
+      "main": [
+        [
+          {
+            "node": "Hikyaku Get Customer (to)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hikyaku Get Customer (to)": {
+      "main": [
+        [
+          {
+            "node": "Hikyaku Get Package",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hikyaku Get Package": {
+      "main": [
+        [
+          {
+            "node": "IF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF": {
+      "main": [
+        [
+          {
+            "node": "Alert Dispatch Team",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

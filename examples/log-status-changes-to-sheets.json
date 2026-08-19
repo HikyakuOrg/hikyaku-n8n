@@ -1,0 +1,89 @@
+{
+  "name": "Hikyaku - Log status changes to Google Sheets",
+  "nodes": [
+    {
+      "id": "e9dfd2a1-fb7d-499e-9210-d736198394aa",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [220, 80],
+      "parameters": {
+        "width": 480,
+        "height": 220,
+        "content": "## Setup\n1. Open **Hikyaku Delivery Status Trigger** and connect your **Hikyaku OAuth2 API** credential. Leave **Statuses** empty so every change is logged.\n2. Open **Append row in sheet**, connect your Google Sheets credential, and pick the spreadsheet + tab to log into.\n3. Activate the workflow.\n\nEvery delivery status change lands as one row: package id, new status, warehouse, and timestamp."
+      }
+    },
+    {
+      "id": "f9f950bf-6559-4159-9deb-b522e0ef304c",
+      "name": "Hikyaku Delivery Status Trigger",
+      "type": "n8n-nodes-hikyaku.hikyakuDeliveryStatusTrigger",
+      "typeVersion": 1,
+      "position": [240, 360],
+      "parameters": {
+        "statuses": []
+      },
+      "credentials": {
+        "hikyakuOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "Hikyaku OAuth2 API account"
+        }
+      }
+    },
+    {
+      "id": "c0e968b3-c975-47f9-92cb-3b8a8e62b36a",
+      "name": "Append row in sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [460, 360],
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "id",
+          "value": "gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "package_id": "={{$json[\"id\"]}}",
+            "status": "={{$json[\"current_status\"]}}",
+            "warehouse_id": "={{$json[\"warehouse_id\"]}}",
+            "logged_at": "={{$now.toISO()}}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Hikyaku Delivery Status Trigger": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

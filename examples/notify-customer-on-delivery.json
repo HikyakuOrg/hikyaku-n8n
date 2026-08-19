@@ -1,0 +1,128 @@
+{
+  "name": "Hikyaku - Notify customer on delivery",
+  "nodes": [
+    {
+      "id": "cac18cd6-d7dc-4ed7-8744-8ca9f2e84669",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [220, 80],
+      "parameters": {
+        "width": 480,
+        "height": 220,
+        "content": "## Setup\n1. Open **Hikyaku Delivery Status Trigger** and connect your **Hikyaku OAuth2 API** credential.\n2. In the **Statuses** field, pick **delivered** from the list (it loads live from your Hikyaku instance once connected).\n3. Open **Send Email** and connect an SMTP credential, and set a real **From** address.\n4. Activate the workflow."
+      }
+    },
+    {
+      "id": "8e613bcd-d772-4969-ae1d-75ac7849aef6",
+      "name": "Hikyaku Delivery Status Trigger",
+      "type": "n8n-nodes-hikyaku.hikyakuDeliveryStatusTrigger",
+      "typeVersion": 1,
+      "position": [240, 360],
+      "parameters": {
+        "statuses": []
+      },
+      "notes": "Set Statuses to \"delivered\" after connecting your credential.",
+      "credentials": {
+        "hikyakuOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "Hikyaku OAuth2 API account"
+        }
+      }
+    },
+    {
+      "id": "7a803926-79ed-415b-a529-ca61b72096c5",
+      "name": "Hikyaku Get Customer",
+      "type": "n8n-nodes-hikyaku.hikyakuGetCustomer",
+      "typeVersion": 1,
+      "position": [460, 360],
+      "parameters": {
+        "customerId": "={{$json[\"to_customer\"]}}",
+        "outputPrefix": "to_customer"
+      },
+      "credentials": {
+        "hikyakuOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "Hikyaku OAuth2 API account"
+        }
+      }
+    },
+    {
+      "id": "75c39efc-85f2-4d29-a467-afb06ba763b2",
+      "name": "Hikyaku Get Package",
+      "type": "n8n-nodes-hikyaku.hikyakuGetPackage",
+      "typeVersion": 1,
+      "position": [680, 360],
+      "parameters": {
+        "packageId": "={{$json[\"id\"]}}",
+        "outputPrefix": "package"
+      },
+      "credentials": {
+        "hikyakuOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "Hikyaku OAuth2 API account"
+        }
+      }
+    },
+    {
+      "id": "efaa344e-8b98-4af9-8617-c8aa6bd71122",
+      "name": "Send Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [900, 360],
+      "parameters": {
+        "fromEmail": "dispatch@yourcompany.com",
+        "toEmail": "={{$json[\"to_customer_email\"]}}",
+        "subject": "=Your package has been delivered — {{$json[\"package_tracking_number\"]}}",
+        "text": "=Hi {{$json[\"to_customer_name\"]}},\n\nYour package ({{$json[\"package_tracking_number\"]}}) has just been delivered.\n\nThanks for choosing us!",
+        "options": {}
+      },
+      "credentials": {
+        "smtp": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "SMTP account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Hikyaku Delivery Status Trigger": {
+      "main": [
+        [
+          {
+            "node": "Hikyaku Get Customer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hikyaku Get Customer": {
+      "main": [
+        [
+          {
+            "node": "Hikyaku Get Package",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hikyaku Get Package": {
+      "main": [
+        [
+          {
+            "node": "Send Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

@@ -1,0 +1,147 @@
+{
+  "name": "Hikyaku - AI tracking assistant",
+  "nodes": [
+    {
+      "id": "ccb6c8f0-a2fc-4e1e-8f07-f870b7b13f78",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [220, 40],
+      "parameters": {
+        "width": 640,
+        "height": 240,
+        "content": "## Setup\n1. Open **Hikyaku Get Customer** and **Hikyaku Get Package** and connect your **Hikyaku OAuth2 API** credential on each.\n2. Open **OpenAI Chat Model** and connect your own OpenAI (or swap for any other Chat Model node) credential.\n3. Click **Chat** at the bottom of the canvas to test — try \"What's the status of package <uuid>?\" or \"Look up customer <uuid> for me.\"\n\nThe agent decides on its own when to call each Hikyaku node — it isn't a fixed sequence."
+      }
+    },
+    {
+      "id": "489eb68f-9f54-4352-81ef-1d571db93f28",
+      "name": "When chat message received",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [240, 380],
+      "webhookId": "hikyaku-ai-tracking-assistant",
+      "parameters": {
+        "options": {}
+      }
+    },
+    {
+      "id": "dedbe230-bfbb-43cd-8e99-37297d40309c",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [500, 380],
+      "parameters": {
+        "promptType": "auto",
+        "options": {
+          "systemMessage": "You are a delivery support assistant for Hikyaku. Use the Hikyaku Get Package and Hikyaku Get Customer tools to look up real data before answering questions about tracking, delivery status, or customer details. Ask the user for a package or customer ID if you don't already have one. Never guess a status or a contact detail — always look it up."
+        }
+      }
+    },
+    {
+      "id": "1848e1d3-6654-47c5-9b75-f669ef2b2a3c",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [460, 600],
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "id": "fad9381e-8119-43a3-9817-1e9d4f0462ab",
+      "name": "Hikyaku Get Package",
+      "type": "n8n-nodes-hikyaku.hikyakuGetPackage",
+      "typeVersion": 1,
+      "position": [680, 600],
+      "parameters": {
+        "packageId": "={{ $fromAI('package_id', 'The Hikyaku package UUID to look up', 'string') }}",
+        "outputPrefix": "package"
+      },
+      "credentials": {
+        "hikyakuOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "Hikyaku OAuth2 API account"
+        }
+      }
+    },
+    {
+      "id": "1a25e00b-4c7d-4a27-9534-746b317844c2",
+      "name": "Hikyaku Get Customer",
+      "type": "n8n-nodes-hikyaku.hikyakuGetCustomer",
+      "typeVersion": 1,
+      "position": [900, 600],
+      "parameters": {
+        "customerId": "={{ $fromAI('customer_id', 'The Hikyaku customer UUID to look up', 'string') }}",
+        "outputPrefix": "customer"
+      },
+      "credentials": {
+        "hikyakuOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "Hikyaku OAuth2 API account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hikyaku Get Package": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hikyaku Get Customer": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}
